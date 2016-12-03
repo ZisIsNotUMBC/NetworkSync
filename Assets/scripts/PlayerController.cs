@@ -8,8 +8,16 @@ public class PlayerController : NetworkBehaviour {
 	const float SPEED = 10;
 	const float MAP_BOUNDARY = 4;
 
+	Transform childNone, childLerp, childExtrap;
+
 	[SyncVar]  // vars that are synchronized from the server to clients
 	float sync_pos_x;  
+
+	void Awake(){
+		childNone = transform.GetChild (0);
+		childLerp = transform.GetChild (1);
+		childExtrap = transform.GetChild (2);
+	}
 
 	void Start(){
 		// initial sync
@@ -44,14 +52,39 @@ public class PlayerController : NetworkBehaviour {
 
 	[ClientCallback] //  run on clients, but not generate warnings if called on server
 	void SendPosToServer(){
-		CmdSyncPos (transform.position.x);
+		CmdSyncPos (childNone.position.x); // sending absulte position of any child node since they have the same x
 	}
 
 	void SyncWithServer(){
-		Vector3 currentPos = transform.position;
+		SyncPlain ();
+		SyncLerp ();
+		SyncExtrap ();
+	}
+
+	// ================== Numerical Methods ================== 
+	void SyncPlain(){
+		Vector3 currentPos = childNone.position;
 		Vector3 newPos = currentPos;
 		newPos.x = sync_pos_x;
-		transform.position = newPos;
+		childNone.position = newPos;
 	}
+
+	void SyncLerp(){
+			
+		// TODO: we need to implement mathf.lerp from scratch ourselves. 
+		// ----- can't use mathf.lerp
+		Vector3 currentPos = childLerp.position;
+		Vector3 newPos = currentPos;
+		newPos.x = sync_pos_x;
+		Vector3 lerpPos = Vector3.Lerp (currentPos, newPos, Time.deltaTime * SPEED);
+		childLerp.position = lerpPos;
+	}
+
+	void SyncExtrap(){
+		// TODO: we need to implement linear extrapolation from scratch ourselves. 
+
+	}
+
+	// ====================================================== 
 
 }
