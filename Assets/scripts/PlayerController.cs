@@ -10,10 +10,8 @@ public class PlayerController : NetworkBehaviour {
 
 	Transform childNone, childLerp, childExtrap;
 
-	[SyncVar (hook="OnSync")]  // vars that are synchronized from the server to clients
+	[SyncVar]  // vars that are synchronized from the server to clients
 	float sync_pos_x;
-	float lastSyncTime;
-	float timePassedLastSync;
 
 	void Awake(){
 		childNone = transform.GetChild (0);
@@ -64,17 +62,7 @@ public class PlayerController : NetworkBehaviour {
 		SyncExtrap ();
 	}
 
-	// ================== Networking  ================== 
-	void OnSync(float value) {
-		if(isLocalPlayer){
-			return;
-		}
-		float currentTime = Time.time;
-		timePassedLastSync = currentTime - lastSyncTime;
-		lastSyncTime = Time.time;
-		
-		Debug.Log(timePassedLastSync);
-	}
+	// ================== Networking  ===================
    // ======================================================
 
 	// ================== Numerical Methods ==================
