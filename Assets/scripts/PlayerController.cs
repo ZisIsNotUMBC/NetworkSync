@@ -62,6 +62,12 @@ public class PlayerController : NetworkBehaviour {
 	}
 
 	// ================== Numerical Methods ==================
+	Vector3 Lerp(Vector3 a, Vector3 b, float t)
+    {
+        t = Mathf.Clamp01(t);
+        return a + ((b - a) * t);
+    }
+
 	void SyncPlain(){
 		Vector3 currentPos = childNone.position;
 		Vector3 newPos = currentPos;
@@ -73,16 +79,16 @@ public class PlayerController : NetworkBehaviour {
 		Vector3 currentPos = childLerp.position;
 		Vector3 newPos = currentPos;
 		newPos.x = sync_pos_x;
-		Vector3 lerpPos = Vector3.Lerp (currentPos, newPos, Time.deltaTime * SPEED);
+		Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
 		childLerp.position = lerpPos;
 	}
 
 	void SyncExtrap(){
-        Vector3 currentPos = childExtrap.position;
+       	Vector3 currentPos = childExtrap.position;
         Vector3 newPos = currentPos;
         newPos.x = sync_pos_x;
-        Vector3 lerpPos = Lerp(currentPos, newPos+newPos-currentPos, Time.deltaTime * SPEED);
-        childExtrap.position = lerpPos;
+        Vector3 extrapPos = Lerp(currentPos, newPos+newPos-currentPos, Time.deltaTime * SPEED);
+        childExtrap.position = extrapPos;
     }
 	// ======================================================
 
