@@ -69,12 +69,6 @@ public class PlayerController : NetworkBehaviour {
 		childNone.position = newPos;
 	}
 
-    Vector3 Lerp(Vector3 a, Vector3 b, float t)
-    {
-        t = Mathf.Clamp01(t);
-        return a + ((b - a) * t);
-    }
-
 	void SyncLerp(){
 			
 		// TODO: we need to implement mathf.lerp from scratch ourselves. 
@@ -82,18 +76,14 @@ public class PlayerController : NetworkBehaviour {
 		Vector3 currentPos = childLerp.position;
 		Vector3 newPos = currentPos;
 		newPos.x = sync_pos_x;
-		Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
+		Vector3 lerpPos = Vector3.Lerp (currentPos, newPos, Time.deltaTime * SPEED);
 		childLerp.position = lerpPos;
 	}
 
 	void SyncExtrap(){
-        // TODO: we need to implement linear extrapolation from scratch ourselves. 
-        Vector3 currentPos = childExtrap.position;
-        Vector3 newPos = currentPos;
-        newPos.x = sync_pos_x;
-        Vector3 lerpPos = Lerp(currentPos, newPos+newPos-currentPos, Time.deltaTime * SPEED);
-        childExtrap.position = lerpPos;
-    }
+		// TODO: we need to implement linear extrapolation from scratch ourselves. 
+
+	}
 
 	// ====================================================== 
 
