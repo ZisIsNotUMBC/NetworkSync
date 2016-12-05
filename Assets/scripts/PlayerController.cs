@@ -1,20 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Networking;
 
-public class PlayerController : NetworkBehaviour {
+public class PlayerController : Photon.MonoBehaviour {
 
 	const float SPEED = 10;
 	const float MAP_BOUNDARY = 4;
 
 	Transform childNone, childLerp, childExtrap;
 
-	[SyncVar (hook="OnSync")]  // vars that are synchronized from the server to clients
 	float sync_pos_x;
-	float lastSyncTime;
-	float timePassedLastSync;
-
+	
 	void Awake(){
 		childNone = transform.GetChild (0);
 		childLerp = transform.GetChild (1);
@@ -22,58 +17,52 @@ public class PlayerController : NetworkBehaviour {
 	}
 
 	void Start(){
-		// initial sync
-		// position is set by network start position
-		SendPosToServer();
 	}
 
 
 	void Update () {
-		if (isLocalPlayer) {
+		if (photonView.isMine) {
 			UpdateLocalControl ();
-		} else {
-			SyncWithServer ();
+		}
+		else{
+			Sync();
 		}
 	}
 
 	void UpdateLocalControl(){
 		if (Input.GetKey (KeyCode.LeftArrow) && transform.position.x > -MAP_BOUNDARY) {
 			transform.position += Vector3.left * SPEED * Time.deltaTime;
-			SendPosToServer ();
 		}
 		else if (Input.GetKey(KeyCode.RightArrow) && transform.position.x < MAP_BOUNDARY) {
 			transform.position += Vector3.right * SPEED * Time.deltaTime;
-			SendPosToServer ();
 		}
 	}
 	// ================================================
 
-	[Command] // runs on the server but can be triggered by clients
-	void CmdSyncPos(float x){
-		sync_pos_x = x;
-	}
 
-	[ClientCallback] //  run on clients, but not generate warnings if called on server
-	void SendPosToServer(){
-		CmdSyncPos (childNone.position.x); // sending absulte position of any child node since they have the same x
-	}
-
-	void SyncWithServer(){
+	void Sync(){
 		SyncPlain ();
 		SyncLerp ();
 		SyncExtrap ();
 	}
 
 	// ================== Networking  ================== 
-	void OnSync(float value) {
-		if(isLocalPlayer){
-			return;
+	void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+	{	
+	
+		// send packet
+		if (stream.isWriting){
+			stream.SendNext(childNone.position.x);
 		}
-		float currentTime = Time.time;
-		timePassedLastSync = currentTime - lastSyncTime;
-		lastSyncTime = Time.time;
-		
-		Debug.Log(timePassedLastSync);
+
+		// received packet
+		else if (stream.isReading){
+			// exmaple
+			float packetSentTime = (float)info.timestamp; 
+			float currentTime = (float)PhotonNetwork.time;
+
+			sync_pos_x = (float)stream.ReceiveNext();
+		}
 	}
    // ======================================================
 
