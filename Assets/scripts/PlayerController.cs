@@ -76,7 +76,6 @@ public class PlayerController : NetworkBehaviour {
     }
 
 	void SyncLerp(){
-			
 		// TODO: we need to implement mathf.lerp from scratch ourselves. 
 		// ----- can't use mathf.lerp
 		Vector3 currentPos = childLerp.position;
@@ -94,7 +93,7 @@ public class PlayerController : NetworkBehaviour {
         Vector3 lerpPos = Lerp(currentPos, newPos+newPos-currentPos, Time.deltaTime * SPEED);
         childExtrap.position = lerpPos;
     }
-
+    
 	// ====================================================== 
 
 }
