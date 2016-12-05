@@ -10,8 +10,9 @@ public class PlayerController : NetworkBehaviour {
 
 	Transform childNone, childLerp, childExtrap;
 
-	[SyncVar]  // vars that are synchronized from the server to clients
+	[SyncVar (hook="OnSync")]  // vars that are synchronized from the server to clients
 	float sync_pos_x;
+	float lastSyncTime;
 
 	void Awake(){
 		childNone = transform.GetChild (0);
@@ -44,6 +45,7 @@ public class PlayerController : NetworkBehaviour {
 			SendPosToServer ();
 		}
 	}
+	// ================================================
 
 	[Command] // runs on the server but can be triggered by clients
 	void CmdSyncPos(float x){
@@ -60,6 +62,14 @@ public class PlayerController : NetworkBehaviour {
 		SyncLerp ();
 		SyncExtrap ();
 	}
+
+	// ================== Networking  ================== 
+	void OnSync(float value) {
+		// will be called when received new packet of sync_pos_x
+		lastSyncTime = Time.time;
+		Debug.Log(lastSyncTime);
+	}
+   // ================== Networking  ==================
 
 	// ================== Numerical Methods ==================
 	Vector3 Lerp(Vector3 a, Vector3 b, float t)
@@ -82,6 +92,7 @@ public class PlayerController : NetworkBehaviour {
 		Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
 		childLerp.position = lerpPos;
 	}
+
 
 	void SyncExtrap(){
        	Vector3 currentPos = childExtrap.position;
