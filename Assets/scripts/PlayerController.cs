@@ -92,7 +92,7 @@ public class PlayerController : Photon.MonoBehaviour {
 		Vector3 newPos = currentPos;
 		newPos.x = sync_pos_x;
 
-		if(Vector3.Distance(currentPos,newPos) > 0.1){
+		if(Mathf.Abs(currentPos.x - newPos.x) > 0.1){
 			Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
 			childLerp.position = lerpPos;
 		}
@@ -104,19 +104,18 @@ public class PlayerController : Photon.MonoBehaviour {
 		Vector3 currentPos = childExtrap.position;
 		Vector3 newPos = currentPos;
 		newPos.x = sync_pos_x;	
-       
-		if(lastSyncX == sync_pos_x){
-			if(Vector3.Distance(currentPos,newPos) > 0.1){
-				Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
-				childExtrap.position = lerpPos;
-			}
-		}
-		else{
+		
+		if(lastSyncX != sync_pos_x){
 			Vector3 extrapPos = Lerp(currentPos, newPos+newPos-currentPos, Time.deltaTime * SPEED);
         	childExtrap.position = extrapPos;
 			lastSyncX = sync_pos_x;
 		}
-		
+		else{
+			if(Mathf.Abs(currentPos.x - newPos.x) > 0.1){
+				Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
+				childExtrap.position = lerpPos;
+			}	
+		}
     }
 	// ======================================================
 
