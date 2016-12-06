@@ -108,7 +108,7 @@ public class PlayerController : Photon.MonoBehaviour {
 		if(lastSyncX == sync_pos_x){
 			if(Vector3.Distance(currentPos,newPos) > 0.1){
 				Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
-				childLerp.position = lerpPos;
+				childExtrap.position = lerpPos;
 			}
 		}
 		else{
