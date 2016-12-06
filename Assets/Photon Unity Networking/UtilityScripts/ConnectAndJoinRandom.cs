@@ -23,6 +23,10 @@ public class ConnectAndJoinRandom : Photon.MonoBehaviour
 
     public virtual void Start()
     {
+        spawnPos = new Transform[2];
+        spawnPos[0] = GameObject.Find("left").transform;
+        spawnPos[1] = GameObject.Find("right").transform;
+
         PhotonNetwork.autoJoinLobby = false;    // we join randomly. always. no need to join a lobby to get the list of rooms.
     }
 
