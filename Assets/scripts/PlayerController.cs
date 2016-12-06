@@ -8,6 +8,8 @@ public class PlayerController : Photon.MonoBehaviour {
 
 	Transform childNone, childLerp, childExtrap;
 
+	private float lastPosX;
+
 	float sync_pos_x;
 	
 	void Awake(){
@@ -17,6 +19,7 @@ public class PlayerController : Photon.MonoBehaviour {
 	}
 
 	void Start(){
+		lastPosX = transform.position.x;
 	}
 
 
@@ -52,7 +55,11 @@ public class PlayerController : Photon.MonoBehaviour {
 	
 		// send packet
 		if (stream.isWriting){
-			stream.SendNext(childNone.position.x);
+			float currentX = childNone.position.x; 
+			if(currentX != lastPosX){
+				stream.SendNext(childNone.position.x);
+				lastPosX = currentX;
+			}
 		}
 
 		// received packet
@@ -84,8 +91,11 @@ public class PlayerController : Photon.MonoBehaviour {
 		Vector3 currentPos = childLerp.position;
 		Vector3 newPos = currentPos;
 		newPos.x = sync_pos_x;
-		Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
-		childLerp.position = lerpPos;
+		
+		if(Vector3.Distance(currentPos,newPos) > 0.1){
+			Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
+			childLerp.position = lerpPos;
+		}
 	}
 
 
