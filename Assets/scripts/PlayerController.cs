@@ -68,9 +68,9 @@ public class PlayerController : Photon.MonoBehaviour {
 
 	// ================== Numerical Methods ==================
 	Vector3 Lerp(Vector3 a, Vector3 b, float t)
-    {
+    {	
         t = Mathf.Clamp01(t);
-        return a + ((b - a) * t);
+        return a + (Vector3.Normalize(b - a) * t);
     }
 
 	void SyncPlain(){
