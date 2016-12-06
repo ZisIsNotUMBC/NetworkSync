@@ -8,9 +8,10 @@ public class PlayerController : Photon.MonoBehaviour {
 
 	Transform childNone, childLerp, childExtrap;
 
-	private float lastPosX;
+	private float lastSentPosX;
 
 	float sync_pos_x;
+	bool firstSync = true;
 	
 	void Awake(){
 		childNone = transform.GetChild (0);
@@ -19,7 +20,7 @@ public class PlayerController : Photon.MonoBehaviour {
 	}
 
 	void Start(){
-		lastPosX = transform.position.x;
+		lastSentPosX = transform.position.x;
 	}
 
 
@@ -56,9 +57,12 @@ public class PlayerController : Photon.MonoBehaviour {
 		// send packet
 		if (stream.isWriting){
 			float currentX = childNone.position.x; 
-			if(currentX != lastPosX){
+			if(currentX != lastSentPosX || firstSync){
 				stream.SendNext(childNone.position.x);
-				lastPosX = currentX;
+				lastSentPosX = currentX;
+
+				if(firstSync)
+					firstSync = false;
 			}
 		}
 
@@ -99,23 +103,112 @@ public class PlayerController : Photon.MonoBehaviour {
 	}
 
 
-	float lastSyncX;
+	Vector3 lastSyncPos;
+	float extrapTimer = 0;
+	float extrapTimeLimit = 0.25f; // 250 millisecond
+	bool alreadyPredicted = false;
+	int dir = 1;
+	Vector3 predictedPos;
 	void SyncExtrap(){
+
 		Vector3 currentPos = childExtrap.position;
-		Vector3 newPos = currentPos;
-		newPos.x = sync_pos_x;	
 		
-		if(lastSyncX != sync_pos_x){
-			Vector3 extrapPos = Lerp(currentPos, newPos+newPos-currentPos, Time.deltaTime * SPEED);
-        	childExtrap.position = extrapPos;
-			lastSyncX = sync_pos_x;
-		}
-		else{
-			if(Mathf.Abs(currentPos.x - newPos.x) > 0.1){
+		Vector3 newPos = currentPos;
+		newPos.x = sync_pos_x;
+
+		// received a new packet
+		if(lastSyncPos.x != sync_pos_x){
+
+			// reset extrap stats
+			alreadyPredicted = false;
+			extrapTimer = 0;
+			
+			// which direction is it moving 
+			float delta = newPos.x - currentPos.x;
+			if(delta < 0) dir = -1;
+			else if (delta > 0) dir = 1;
+			else dir = 0;
+			// dir = (int)Mathf.Sign(newPos.x - currentPos.x);  
+
+			// smoothly transit to the new position received
+			if(Mathf.Abs(delta) > 0.1f){
+				Debug.Log("moving to the new packet postion");
 				Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
 				childExtrap.position = lerpPos;
-			}	
+			}
+			// reached new position
+			else{
+				// save synced position
+				lastSyncPos = currentPos;
+				lastSyncPos.x = sync_pos_x;
+
+				// calcualte prediction
+				// TODO: properly predict position
+				predictedPos = lastSyncPos;
+				predictedPos.x += dir;
+				
+				Debug.Log("reahed the new packet postion");	
+				Debug.Log("moving to :" + dir);
+				Debug.Log("currentPos :" + currentPos);
+				Debug.Log("predictedPos :" + predictedPos);
+			}
 		}
+
+		// no packets in coming
+		// possible packet loss 
+		else{
+			Debug.Log("no new packet received");	
+			
+			// move further to prediction
+			// with a time limit  
+			if(!alreadyPredicted && extrapTimer < extrapTimeLimit){
+				
+				if(Mathf.Abs(currentPos.x - predictedPos.x) > 0.1f){
+					Debug.Log("moving to the predicted position");	
+					
+					Vector3 extrapPos = Lerp(currentPos, predictedPos, Time.deltaTime * SPEED);
+					childExtrap.position = extrapPos;
+					
+					extrapTimer += Time.deltaTime;
+				}
+				
+				// TODO: shouldn't need to do this 
+				// got to predicted position
+				else{
+					Debug.Log("reached the predicted position");
+
+					alreadyPredicted = true;
+					// temp
+					extrapTimer = 0;
+				}
+			}
+
+			// prediction finished 
+			// smoothly move back to corrected postion 
+			// else{
+			// 	// reset extrap stats
+			// 	alreadyPredicted = true;
+			// 	extrapTimer = 0;
+
+			// 	if(Mathf.Abs(currentPos.x - newPos.x) > 0.1){
+			// 		Vector3 lerpPos = Lerp (currentPos, lastSyncPos, Time.deltaTime * SPEED);
+			// 		childExtrap.position = lerpPos;
+			// 	} 
+			// }
+
+		}
+
+		// if(lastSyncX != sync_pos_x){
+		// 	Vector3 extrapPos = Lerp(currentPos, newPos+newPos-currentPos, Time.deltaTime * SPEED);
+        // 	childExtrap.position = extrapPos;
+		// 	lastSyncX = sync_pos_x;
+		// }
+		// else{
+		// 	if(Mathf.Abs(currentPos.x - newPos.x) > 0.1){
+		// 		Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
+		// 		childExtrap.position = lerpPos;
+		// 	}	
+		// }
     }
 	// ======================================================
 
