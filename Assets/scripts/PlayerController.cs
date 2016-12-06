@@ -27,9 +27,18 @@ public class PlayerController : Photon.MonoBehaviour {
 	void Update () {
 		if (photonView.isMine) {
 			UpdateLocalControl ();
+
+			if(Input.GetKeyDown(KeyCode.F1)){
+				transform.gameObject.SetActive(false);
+			}
+
 		}
 		else{
 			Sync();
+
+			if(Input.GetKeyDown(KeyCode.F2)){
+				transform.gameObject.SetActive(false);
+			}
 		}
 	}
 
@@ -51,6 +60,7 @@ public class PlayerController : Photon.MonoBehaviour {
 	}
 
 	// ================== Networking  ================== 
+	float packetSentTime;
 	void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
 	{	
 	
@@ -69,7 +79,7 @@ public class PlayerController : Photon.MonoBehaviour {
 		// received packet
 		else if (stream.isReading){
 			// exmaple
-			float packetSentTime = (float)info.timestamp; 
+			packetSentTime = (float)info.timestamp; 
 			float currentTime = (float)PhotonNetwork.time;
 
 			sync_pos_x = (float)stream.ReceiveNext();
@@ -96,7 +106,7 @@ public class PlayerController : Photon.MonoBehaviour {
 		Vector3 newPos = currentPos;
 		newPos.x = sync_pos_x;
 
-		if(Mathf.Abs(currentPos.x - newPos.x) > 0.1){
+		if(Mathf.Abs(currentPos.x - newPos.x) > 0.1f){
 			Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
 			childLerp.position = lerpPos;
 		}
@@ -109,8 +119,13 @@ public class PlayerController : Photon.MonoBehaviour {
 	bool alreadyPredicted = false;
 	int dir = 1;
 	Vector3 predictedPos;
+	bool first = true;
 	void SyncExtrap(){
-
+		if(first){
+			first = false;
+			return;
+		}
+		
 		Vector3 currentPos = childExtrap.position;
 		
 		Vector3 newPos = currentPos;
@@ -125,14 +140,10 @@ public class PlayerController : Photon.MonoBehaviour {
 			
 			// which direction is it moving 
 			float delta = newPos.x - currentPos.x;
-			if(delta < 0) dir = -1;
-			else if (delta > 0) dir = 1;
-			else dir = 0;
-			// dir = (int)Mathf.Sign(newPos.x - currentPos.x);  
+			dir = (int)Mathf.Sign(delta);  
 
 			// smoothly transit to the new position received
-			if(Mathf.Abs(delta) > 0.1f){
-				Debug.Log("moving to the new packet postion");
+			if(Mathf.Abs(delta)>Time.deltaTime * SPEED){
 				Vector3 lerpPos = Lerp (currentPos, newPos, Time.deltaTime * SPEED);
 				childExtrap.position = lerpPos;
 			}
@@ -146,11 +157,6 @@ public class PlayerController : Photon.MonoBehaviour {
 				// TODO: properly predict position
 				predictedPos = lastSyncPos;
 				predictedPos.x += dir;
-				
-				Debug.Log("reahed the new packet postion");	
-				Debug.Log("moving to :" + dir);
-				Debug.Log("currentPos :" + currentPos);
-				Debug.Log("predictedPos :" + predictedPos);
 			}
 		}
 
@@ -162,11 +168,10 @@ public class PlayerController : Photon.MonoBehaviour {
 			// move further to prediction
 			// with a time limit  
 			if(!alreadyPredicted && extrapTimer < extrapTimeLimit){
-				
-				if(Mathf.Abs(currentPos.x - predictedPos.x) > 0.1f){
+				if(Mathf.Abs(currentPos.x - predictedPos.x) > Time.deltaTime * SPEED){
 					Debug.Log("moving to the predicted position");	
 					
-					Vector3 extrapPos = Lerp(currentPos, predictedPos, Time.deltaTime * SPEED);
+					Vector3 extrapPos = Lerp(currentPos, predictedPos,Time.deltaTime * SPEED);
 					childExtrap.position = extrapPos;
 					
 					extrapTimer += Time.deltaTime;
@@ -185,16 +190,16 @@ public class PlayerController : Photon.MonoBehaviour {
 
 			// prediction finished 
 			// smoothly move back to corrected postion 
-			// else{
-			// 	// reset extrap stats
-			// 	alreadyPredicted = true;
-			// 	extrapTimer = 0;
+			else{
+				// reset extrap stats
+				alreadyPredicted = true;
+				extrapTimer = 0;
 
-			// 	if(Mathf.Abs(currentPos.x - newPos.x) > 0.1){
-			// 		Vector3 lerpPos = Lerp (currentPos, lastSyncPos, Time.deltaTime * SPEED);
-			// 		childExtrap.position = lerpPos;
-			// 	} 
-			// }
+				if(Mathf.Abs(currentPos.x - newPos.x) > Time.deltaTime * SPEED){
+					Vector3 lerpPos = Lerp (currentPos, lastSyncPos, Time.deltaTime * SPEED);
+					childExtrap.position = lerpPos;
+				} 
+			}
 
 		}
 
@@ -211,5 +216,11 @@ public class PlayerController : Photon.MonoBehaviour {
 		// }
     }
 	// ======================================================
+
+	void OnDrawGizmos() {
+		Gizmos.color = Color.red;
+        Vector3 pos = predictedPos;
+		Gizmos.DrawSphere(predictedPos,0.1f);
+    }
 
 }
