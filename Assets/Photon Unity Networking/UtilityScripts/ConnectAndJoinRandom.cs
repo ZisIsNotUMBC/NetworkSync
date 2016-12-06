@@ -73,7 +73,14 @@ public class ConnectAndJoinRandom : Photon.MonoBehaviour
     {
         Debug.Log("OnJoinedRoom() called by PUN. Now this client is in a room. From here on, your game would be running. For reference, all callbacks are listed in enum: PhotonNetworkingMessage");
         
-        GameObject playerObject = PhotonNetwork.Instantiate("player",spawnPos[0].position,Quaternion.identity,0);
+        Debug.Log("player count: " + PhotonNetwork.room.playerCount);
 
+        if(PhotonNetwork.room.playerCount >1){
+            GameObject playerObject = PhotonNetwork.Instantiate("player",spawnPos[0].position,Quaternion.identity,0);
+        }
+        else{
+            Debug.Log("created right");
+            GameObject playerObject = PhotonNetwork.Instantiate("player",spawnPos[1].position,Quaternion.identity,0);            
+        }
     }
 }
